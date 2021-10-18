@@ -16,9 +16,7 @@ import (
 
 type ENSDiamond struct {
 	*diamond.Diamond
-	addressResolver *addressresolver.Facet
-	nameResolver    *nameresolver.Facet
-	utilsFacet      *utils.Facet
+	facets *ensDiamondFacets
 }
 
 func NewENSDiamond(
@@ -33,37 +31,57 @@ func NewENSDiamond(
 		return nil, err
 	}
 
-	addressResolverFacet, err := addressresolver.NewFacet(facet.NewFacet(baseDiamond))
-	if err != nil {
-		return nil, err
-	}
-
-	nameResolverFacet, err := nameresolver.NewFacet(facet.NewFacet(baseDiamond))
-	if err != nil {
-		return nil, err
-	}
-
-	utilsFacet, err := utils.NewFacet(facet.NewFacet(baseDiamond))
+	facets, err := newEnsDiamondFacets(baseDiamond)
 	if err != nil {
 		return nil, err
 	}
 
 	return &ENSDiamond{
-		Diamond:         baseDiamond,
-		addressResolver: addressResolverFacet,
-		nameResolver:    nameResolverFacet,
-		utilsFacet:      utilsFacet,
+		Diamond: baseDiamond,
+		facets:  facets,
 	}, nil
 }
 
 func (d *ENSDiamond) AddressResolver() *addressresolver.Facet {
-	return d.addressResolver
+	return d.facets.addressResolver
 }
 
 func (d *ENSDiamond) NameResolver() *nameresolver.Facet {
-	return d.nameResolver
+	return d.facets.nameResolver
 }
 
 func (d *ENSDiamond) UtilsFacet() *utils.Facet {
-	return d.utilsFacet
+	return d.facets.utilsFacet
+}
+
+type ensDiamondFacets struct {
+	addressResolver *addressresolver.Facet
+	nameResolver    *nameresolver.Facet
+	utilsFacet      *utils.Facet
+}
+
+func newEnsDiamondFacets(d *diamond.Diamond) (*ensDiamondFacets, error) {
+	facets := &ensDiamondFacets{}
+
+	var (
+		err       error
+		baseFacet = facet.NewFacet(d)
+	)
+
+	facets.addressResolver, err = addressresolver.NewFacet(baseFacet)
+	if err != nil {
+		return nil, err
+	}
+
+	facets.nameResolver, err = nameresolver.NewFacet(baseFacet)
+	if err != nil {
+		return nil, err
+	}
+
+	facets.utilsFacet, err = utils.NewFacet(baseFacet)
+	if err != nil {
+		return nil, err
+	}
+
+	return facets, nil
 }

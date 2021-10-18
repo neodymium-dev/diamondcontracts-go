@@ -12,19 +12,15 @@ import (
 	"github.com/neodymium-dev/diamondcontracts-go/diamond/diamondabi"
 	"github.com/neodymium-dev/diamondcontracts-go/facets/diamondcut"
 	"github.com/neodymium-dev/diamondcontracts-go/facets/diamondloupe"
-	"github.com/neodymium-dev/diamondcontracts-go/facets/facet"
-	"github.com/neodymium-dev/diamondcontracts-go/facets/ownership"
 )
 
 type Diamond struct {
-	address      common.Address
-	diamond      *diamondabi.Diamond
-	diamondCut   *diamondcut.Facet
-	diamondLoupe *diamondloupe.Facet
-	ownership    *ownership.Facet
-	chainID      *big.Int
-	rpc          *ethclient.Client
-	account      *account.Account
+	address common.Address
+	diamond *diamondabi.Diamond
+	facets  *diamondFacets
+	chainID *big.Int
+	rpc     *ethclient.Client
+	account *account.Account
 }
 
 func NewDiamond(
@@ -46,17 +42,7 @@ func NewDiamond(
 		rpc:     rpcClient,
 	}
 
-	d.diamondCut, err = diamondcut.NewFacet(facet.NewFacet(d))
-	if err != nil {
-		return nil, err
-	}
-
-	d.diamondLoupe, err = diamondloupe.NewFacet(facet.NewFacet(d))
-	if err != nil {
-		return nil, err
-	}
-
-	d.ownership, err = ownership.NewFacet(facet.NewFacet(d))
+	d.facets, err = newDiamondFacets(d)
 	if err != nil {
 		return nil, err
 	}
@@ -93,11 +79,11 @@ func (d *Diamond) Diamond() *diamondabi.Diamond {
 }
 
 func (d *Diamond) DiamondCut() *diamondcut.Facet {
-	return d.diamondCut
+	return d.facets.diamondCut
 }
 
 func (d *Diamond) DiamondLoupe() *diamondloupe.Facet {
-	return d.diamondLoupe
+	return d.facets.diamondLoupe
 }
 
 func (d *Diamond) CallOpts() *bind.CallOpts {
